@@ -1376,6 +1376,7 @@ class ResultViewModel2 : ViewModel() {
                     listOf(
                         txt(R.string.episode_action_auto_download) to ACTION_DOWNLOAD_EPISODE,
                         txt(R.string.episode_action_download_mirror) to ACTION_DOWNLOAD_MIRROR,
+                        txt("Send to Nova Server (192.168.1.9)") to 9999,
                         txt(R.string.episode_action_download_subtitle) to ACTION_DOWNLOAD_EPISODE_SUBTITLE_MIRROR,
                         txt(R.string.episode_action_reload_links) to ACTION_RELOAD_EPISODE,
                     )
@@ -1486,6 +1487,37 @@ class ResultViewModel2 : ViewModel() {
                         response.url,
                     ).toWrapper()
                 )
+            }
+
+            9999 -> {
+                val response = currentResponse ?: return@launchSafe
+                acquireSingleLink(
+                    click.data,
+                    LOADTYPE_INAPP_DOWNLOAD,
+                    txt("Send to Nova Server (Choose Source & Quality)")
+                ) { (result, index) ->
+                    ioSafe {
+                        val link = result.links[index]
+                        val fullTitle = activity?.getNameFull(
+                            click.data.name,
+                            click.data.episode,
+                            click.data.season
+                        ) ?: response.name
+
+                        val success = com.lagradost.cloudstream3.utils.NovaBridgeClient.sendToNova(
+                            title = fullTitle,
+                            link = link
+                        )
+
+                        main {
+                            if (success) {
+                                showToast("Queued on Nova Server: " + fullTitle, Toast.LENGTH_LONG)
+                            } else {
+                                showToast("Failed to connect to Nova Server", Toast.LENGTH_SHORT)
+                            }
+                        }
+                    }
+                }
             }
 
             ACTION_DOWNLOAD_MIRROR -> {
